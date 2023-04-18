@@ -81,9 +81,9 @@ contract ERC7221 {
     /// @param _from The current owner of the NFT
     /// @param _to The new owner
     /// @param _tokenId The NFT to transfer
-    function transferFrom(address _from, address _to, uint256 _tokenId) external payable [
+    function transferFrom(address _from, address _to, uint256 _tokenId) external payable {
         
-    ]
+    }
 
     /// @notice Change or reaffirm the approved address for an NFT
     /// @dev The zero address indicates there is no approved address.
@@ -115,6 +115,7 @@ contract ERC7221 {
     /// @param _tokenId The NFT to find the approved address for
     /// @return The approved address for this NFT, or the zero address if there is none
     function getApproved(uint256 _tokenId) external view returns (address) {
+        require(_owners[_tokenId] != address(0), "Token ID does not exist");
         return _tokenApprovals[_tokenId];
     }
 
