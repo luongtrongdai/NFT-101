@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.18;
 
-contract ERC7221 {
+contract ERC721 {
+    bytes4 constant InterfaceSignature_ERC721 = 0x80ac58cd;
+    bytes4 constant InterfaceSignature_ERC721Metadata = 0x5b5e139f;
     mapping(address => uint256) internal _balances;
     mapping(uint256 => address) internal _owners;
     mapping(address => mapping(address => bool)) private _operatorApprovals;
@@ -57,8 +59,10 @@ contract ERC7221 {
     /// @param _to The new owner
     /// @param _tokenId The NFT to transfer
     /// @param data Additional data with no specified format, sent in call to `_to`
-    function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes calldata data) external payable {
+    function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes memory data) public payable {
+        transferFrom(_from, _to, _tokenId);
 
+        require(_checkOnERC721Received(), "Receiver not implemented");
     }
 
     /// @notice Transfers the ownership of an NFT from one address to another address
@@ -68,7 +72,7 @@ contract ERC7221 {
     /// @param _to The new owner
     /// @param _tokenId The NFT to transfer
     function safeTransferFrom(address _from, address _to, uint256 _tokenId) external payable {
-
+        safeTransferFrom(_from, _to, _tokenId, "");
     }
 
     /// @notice Transfer ownership of an NFT -- THE CALLER IS RESPONSIBLE
@@ -81,8 +85,23 @@ contract ERC7221 {
     /// @param _from The current owner of the NFT
     /// @param _to The new owner
     /// @param _tokenId The NFT to transfer
-    function transferFrom(address _from, address _to, uint256 _tokenId) external payable {
-        
+    function transferFrom(address _from, address _to, uint256 _tokenId) public payable {
+        address owner = ownerOf(_tokenId);
+
+        require(_to != address(0), "Address is zero");
+        require(_from == owner, "From address is not the owner");
+        require(
+            owner == msg.sender 
+            || getApproved(_tokenId) == msg.sender 
+            || isApprovedForAll(owner, msg.sender),
+            "msg.sender is not the owner or approved for transfer");
+        approve(address(0), _tokenId);
+
+        _balances[_from] -= 1;
+        _balances[_to] += 1;
+        _owners[_tokenId] = _to;
+
+        emit Transfer(_from, _to, _tokenId);
     }
 
     /// @notice Change or reaffirm the approved address for an NFT
@@ -91,7 +110,7 @@ contract ERC7221 {
     ///  operator of the current owner.
     /// @param _approved The new approved NFT controller
     /// @param _tokenId The NFT to approve
-    function approve(address _approved, uint256 _tokenId) external payable {
+    function approve(address _approved, uint256 _tokenId) public payable {
         address owner = ownerOf(_tokenId);
         require(_owners[_tokenId] == msg.sender || isApprovedForAll(owner, msg.sender), "unauthorized operator");
 
@@ -114,7 +133,7 @@ contract ERC7221 {
     /// @dev Throws if `_tokenId` is not a valid NFT.
     /// @param _tokenId The NFT to find the approved address for
     /// @return The approved address for this NFT, or the zero address if there is none
-    function getApproved(uint256 _tokenId) external view returns (address) {
+    function getApproved(uint256 _tokenId) public view returns (address) {
         require(_owners[_tokenId] != address(0), "Token ID does not exist");
         return _tokenApprovals[_tokenId];
     }
@@ -125,5 +144,14 @@ contract ERC7221 {
     /// @return True if `_operator` is an approved operator for `_owner`, false otherwise
     function isApprovedForAll(address _owner, address _operator) public view returns (bool) {
         return _operatorApprovals[_owner][_operator];
+    }
+
+    function _checkOnERC721Received() private pure returns(bool) {
+        return true;
+    }
+
+    // EIP165: if a contract implement another interface
+    function supportsInterface(bytes4 _interfaceId) public pure virtual returns(bool) {
+        return _interfaceId == InterfaceSignature_ERC721;
     }
 }

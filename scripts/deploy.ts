@@ -1,19 +1,16 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+  const SuperMarioWorld = await ethers.getContractFactory("SuperMarioWorld");
+  const superMarioWorld = await SuperMarioWorld.deploy("SuperMarioWorld", "SPM");
 
-  const lockedAmount = ethers.utils.parseEther("0.001");
+  await superMarioWorld.deployed();
 
-  const Lock = await ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+  console.log("Success! Contract was deployed to: ", superMarioWorld.address);
 
-  await lock.deployed();
+  await superMarioWorld.mint("https://ipfs.io/ipfs/QmVrZ2bUpCj7M95FTnGPwogiX6oJwoeKPxoCidRfAZqeHY");
 
-  console.log(
-    `Lock with ${ethers.utils.formatEther(lockedAmount)}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
-  );
+  console.log("NFT successfull minted");
 }
 
 // We recommend this pattern to be able to use async/await everywhere
