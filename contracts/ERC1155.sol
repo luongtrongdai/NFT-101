@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 abstract contract ERC1155 {
     bytes4 constant public ERC1155_ERC165 = 0xd9b67a26;
+    bytes4 constant public ERC165 = 0x0e89341c;
     bytes4 constant InterfaceSignature_ERC721Metadata = 0x5b5e139f;
     // mapping (tokenId => (owner => balance))
     mapping(uint256 => mapping(address => uint256)) internal _balances;
