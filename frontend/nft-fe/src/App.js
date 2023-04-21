@@ -6,7 +6,7 @@ function App() {
     name: "Mario",
     symbol: "SMWC",
     copies: 10,
-    image: "https://xxx"
+    image: "https://ipfs.io/ipfs/QmSQP42KaWPGMvg4KtmcLGp99Rh2ejHbV1dT9HsHgQMzSH"
   };
 
   const NFTCard = (props) => {
@@ -14,10 +14,20 @@ function App() {
 
     return (
       <NftCard>
-
+        <NftPhoto style={{ backgroundImage: `url(${nft && nft.image})`}}></NftPhoto>
       </NftCard>
     );
   };
+
+  const NftPhoto = styled.div `
+    display: block;
+    width: 200px;
+    height: 200px;
+    background-position: center center;
+    background-size: cover;
+    border-radius: 10px;
+    margin: auto;
+  `
 
   const NftCard = styled.dev `
     width: 200px;
