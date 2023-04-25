@@ -1,50 +1,146 @@
-
-import styled from "styled-components";
+import styled from 'styled-components';
+import { NFTCard, NftPhoto } from './components/NftCard';
+import { useState, useEffect } from "react"
+import { NFTModal } from './components/NftModal';
+import { ethers } from 'ethers';
+import { connect } from './helpers';
+const axios = require('axios');
 
 function App() {
-  let nft = {
-    name: "Mario",
-    symbol: "SMWC",
-    copies: 10,
-    image: "https://ipfs.io/ipfs/QmSQP42KaWPGMvg4KtmcLGp99Rh2ejHbV1dT9HsHgQMzSH"
-  };
 
-  const NFTCard = (props) => {
-    let nft = props.nft;
+  let initialNfts =
+  [
+    { name: "Mario", symbol: "SPMC", copies: 10, image: "https://via.placeholder.com/150" },
+    { name: "Luigi", symbol: "SPMC", copies: 10, image: "https://via.placeholder.com/150" },
+    { name: "Yoshi", symbol: "SPMC", copies: 10, image: "https://via.placeholder.com/150" },
+  ]
+  
+  const [showModal, setShowModal] = useState(false)
+  const [selectedNft, setSelectedNft] = useState()
+  const [nfts, setNfts] = useState(initialNfts)
 
-    return (
-      <NftCard>
-        <NftPhoto style={{ backgroundImage: `url(${nft && nft.image})`}}></NftPhoto>
-      </NftCard>
-    );
-  };
+  useEffect( () => {
 
-  const NftPhoto = styled.div `
-    display: block;
-    width: 200px;
-    height: 200px;
-    background-position: center center;
-    background-size: cover;
-    border-radius: 10px;
-    margin: auto;
-  `
+    ( async () => {
+      const address = await connect()
+      if (address) {
+        getNfts(address)
+      }
+    })()
 
-  const NftCard = styled.dev `
-    width: 200px;
-    height: 250px;
-    margin: auto;
-    border-radius: 10px;
-    padding: 0px;
-    cursor: pointer;
-    box-shadow: 8px 8px 16px #d9d9d9,
-          -8px -8px 16px #ffffff;
-  `
+  }, [])
 
+
+  function toggleModal(i) {
+    if (i >= 0) {
+      setSelectedNft(nfts[i])
+    }
+    setShowModal(!showModal)
+  }
+
+  async function getMetadataFromIpfs(tokenURI) {
+    let metadata = await axios.get(tokenURI)
+    return metadata.data
+  }
+
+  async function getNfts(address) {
+    const rpc = "https://rpc-mumbai.maticvigil.com/" // Alchemy 
+    const ethersProvider = new ethers.providers.JsonRpcProvider(rpc)
+
+    let abi = [
+      "function symbol() public view returns(string memory)",
+      "function tokenCount() public view returns(uint256)",
+      "function uri(uint256 _tokenId) public view returns(string memory)",
+      "function balanceOfBatch(address[] accounts, uint256[] ids) public view returns(uint256[])"
+    ]
+
+    let nftCollection = new ethers.Contract(
+      "0x8c18d112509f8fccfe798c4c2efec99b4b7a07c3",
+      abi,
+      ethersProvider
+    )
+
+    let numberOfNfts = (await nftCollection.tokenCount()).toNumber()
+    let collectionSymbol = await nftCollection.symbol()
+
+    let accounts = Array(numberOfNfts).fill(address)
+    let ids = Array.from({length: numberOfNfts}, (_, i) => i + 1)
+    let copies = await nftCollection.balanceOfBatch(accounts, ids)
+
+    let tempArray = []
+    let baseUrl = ""
+
+    for (let i = 1; i <= numberOfNfts; i++) {
+      if (i == 1) { 
+        let tokenURI = await nftCollection.uri(i)
+        baseUrl = tokenURI.replace(/\d+.json/, "")
+        let metadata = await getMetadataFromIpfs(tokenURI)
+        metadata.symbol = collectionSymbol
+        metadata.copies = copies[i - 1]
+        tempArray.push(metadata)
+      } else {
+        let metadata = await getMetadataFromIpfs(baseUrl + `${i}.json`)
+        metadata.symbol = collectionSymbol
+        metadata.copies = copies[i - 1]
+        tempArray.push(metadata)
+      }
+    }
+    setNfts(tempArray)
+  } 
   return (
     <div className="App">
-       <NFTCard nft={nft} /> 
+      <Container>
+        <Title> Super Mario World Collection </Title>
+        <Subtitle> The rarest and best of Super Mario World </Subtitle>
+        <Grid>
+          {
+            nfts.map((nft, i) =>
+              <NFTCard nft={nft} key={i} toggleModal={() => toggleModal(i)} />
+            )
+          }
+        </Grid>
+      </Container>
+      {
+        showModal &&
+        <NFTModal
+          nft={selectedNft}
+          toggleModal={() => toggleModal()}
+        />
+      }
+
     </div>
   );
 }
+
+const Title = styled.h1`
+  margin: 0;
+  text-align: center;
+`
+const Subtitle = styled.h4`
+  color: gray;
+  margin-top: 0;
+  text-align: center;
+`
+const Container = styled.div`
+  width: 70%;
+  max-width: 1200px;
+  margin: auto;
+  margin-top: 100px;
+`
+const Grid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  row-gap: 40px;
+
+  @media(max-width: 1200px) {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  @media(max-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+  }
+  @media(max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+`
 
 export default App;
