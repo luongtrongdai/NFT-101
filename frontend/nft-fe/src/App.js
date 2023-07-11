@@ -44,7 +44,7 @@ function App() {
   }
 
   async function getNfts(address) {
-    const rpc = "https://rpc-mumbai.maticvigil.com/" // Alchemy 
+    const rpc = "https://polygon-mumbai.g.alchemy.com/v2/88Eh3EfX-SJG7ldzSqJTli0NTL4HC7fB" // Alchemy 
     const ethersProvider = new ethers.providers.JsonRpcProvider(rpc)
 
     let abi = [
@@ -55,7 +55,7 @@ function App() {
     ]
 
     let nftCollection = new ethers.Contract(
-      "0x8c18d112509f8fccfe798c4c2efec99b4b7a07c3",
+      "0x5182cea307e112F5565851c3a6c0D78402155B4F",
       abi,
       ethersProvider
     )
